@@ -1,5 +1,6 @@
 (ns css-parser.parser
-  (:require [clojure.string :refer [trim]]))
+  (:require [clojure.string :refer [trim]]
+            [css-parser.parse :as parse]))
 
 ; theory: type Parser a = String -> [(a, String)]
 
@@ -14,15 +15,6 @@
 
 ; utilities
 
-(defn parse [parser input]
-  (parser input))
-
-(defn parse-all [parser input]
-  (->> input
-       (parse parser)
-       (filter #(= "" (second %)))
-       ffirst))
-
 ; monad stuff *waves hands*
 
 (defn return [v]
@@ -31,8 +23,8 @@
 (defn >>= [m f]
   (fn [input]
     (->> input
-         (parse m)
-         (mapcat (fn [[v tail]] (parse (f v) tail))))))
+         (parse/one m)
+         (mapcat (fn [[v tail]] (parse/one (f v) tail))))))
 
 ;; haskell-ish do* macro
 
@@ -79,12 +71,6 @@
   "accepts any letter"
   (re-compare #"[a-zA-Z]"))
 
-; testing...
-(parse (char-match "c") "clojure1.7")
-(parse (char-omit "t") "est")
-(parse letter-match "clojure1.2")
-(parse digit-match "1blah!")
-
 ; combinators
 
 (defn and-then
@@ -99,7 +85,7 @@
   "(a|b)"
   [p1 p2]
   (fn [input]
-    (lazy-cat (parse p1 input) (parse p2 input))))
+    (lazy-cat (parse/one p1 input) (parse/one p2 input))))
 
 (declare plus)
 (declare optional)
@@ -136,18 +122,6 @@
   "recognizes given string, i.e. \"clojure\""
   (reduce and-then (map #(char-match (str %)) s)))
 
-; more intense example
-
-(def clojure-version (do*
-                      (string-match "clojure")
-                      (char-match " ")
-                      (major <- digit-match)
-                      (char-match ".")
-                      (minor <- digit-match)
-                      (return (str "major: " major "; minor: " minor))))
-
-(parse-all clojure-version "clojure 1.1")
-
 ; CSS Gramar
 
 (defrecord Rule [key value])
@@ -183,4 +157,4 @@
   color: green;
 }")
 
-(parse-all ruleset css)
+(parse/all stylesheet css)
