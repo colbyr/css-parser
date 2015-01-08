@@ -5,6 +5,6 @@
 
 (defn all [parser input]
   (->> input
-       (parse parser)
+       (one parser)
        (filter #(= "" (second %)))
        ffirst))
