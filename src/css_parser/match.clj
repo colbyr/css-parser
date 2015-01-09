@@ -30,6 +30,9 @@
   "accepts any letter"
   (re-compare #"[a-zA-Z]"))
 
+(def letter-or-dash
+  (or-else letter (character "-")))
+
 (def new-line
   "accepts a new line character, i.e. '\n'"
   (character "\n"))
@@ -72,7 +75,7 @@
 (defrecord Rule [key value])
 (def rule
   (do*
-   (rule-name <- (many (character-omit ":")))
+   (rule-name <- (many letter-or-dash))
    (character ":")
    white-spaces
    (rule-value <- (many (character-omit ";")))
@@ -86,7 +89,7 @@
    (selector <- (plus (character-omit "{")))
    (character "{")
    white-space-and-comments
-   (rules <- (plus rule))
+   (rules <- (many rule))
    white-space-and-comments
    (character "}")
    white-space-and-comments
